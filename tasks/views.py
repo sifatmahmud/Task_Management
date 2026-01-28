@@ -5,8 +5,18 @@ from django.http import HttpResponse
 
 def manager_dashboard(request):
     return render(request, "dashboard/manager_dashboard.html")
+
 def user_dashboard(request):
     return render(request, "dashboard/user_dashboard.html")
 
 def test(request):
-    return render(request, 'test.html')
+    names = ["Mahmud", "Sifat", "Rifat", "Jon"]
+    count = 0
+    for name in names:
+        count+=1
+    context = {
+        "names": names,
+        "age": 23,
+        "count": count
+    }
+    return render(request, 'test.html', context)
