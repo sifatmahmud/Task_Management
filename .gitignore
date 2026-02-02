@@ -2,3 +2,4 @@ task_env_2nd/
 __pycache__/
 db.sqlite3
 node_modules/
+*.pyc
