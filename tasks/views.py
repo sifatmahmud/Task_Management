@@ -1,8 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from tasks.forms import TaskForm, TaskModelForm
-from tasks.models import Employee, Task
-# Create your views here.
+from tasks.models import Employee, Task, TaskDetail, Project
+from datetime import date
+from django.db.models import Q, Count, Max, Min, Avg
 
 
 def manager_dashboard(request):
@@ -40,10 +41,5 @@ def create_task(request):
 
 
 def show_task(request):
-    # retrive all data from tasks model
-    tasks = Task.objects.all()
-
-    # retrive a specific task
-    task_3 = Task.objects.get(pk=1)
-
-    return render(request, 'show_task.html', {'tasks':tasks, 'task_3': task_3})
+    projects = Project.objects.annotate(num_task=Count('task')).order_by('num_task')
+    return render(request, 'show_task.html', {'projects': projects})
