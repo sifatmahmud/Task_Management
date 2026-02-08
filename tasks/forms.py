@@ -68,25 +68,6 @@ class TaskModelForm(StyledFormMixin, forms.ModelForm):
             'assigned_to':forms.CheckboxSelectMultiple
         }
 
-        # exclude = ['project', 'is_completed', 'created_at', 'updated_at']
-        # Manual widgets
-        # widgets = {
-        #     'title':forms.TextInput(attrs={
-        #         'class': "border-2 border-gray-300 w-full rounded-lg shadow-sm focus:border-rose-500 focus:ring-rose-500 h-10",
-        #         'placeholder': "  Enter task title"
-        #     }),
-        #     'description':forms.Textarea(attrs={
-        #         'class': "border-2 border-gray-300 w-full rounded-lg shadow-sm focus:border-rose-500 focus:ring-rose-500 h-40",
-        #         'placeholder': "  Describe the task",
-        #         'rows':5
-        #         }),
-        #     'due_date': forms.SelectDateWidget(attrs={
-        #         'class': "border-2 border-gray-300 rounded-lg shadow-sm focus:border-rose-500 focus:ring-rose-500 p-2 mr-1"}),
-        #     'assigned_to':forms.CheckboxSelectMultiple(attrs={
-        #         'class': "space-y-2"})
-        # }
-    
-
     # widget_mixing
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
