@@ -10,10 +10,10 @@
 <body>
     <div>
         <ol>
-            {% for project in projects %}
+            {% for task in tasks %}
             <li>
-                <p>{{project.name}}</p>
-                <p>{{project.num_task}}</p>
+                <span>{{task.title }}</span>
+                <span> - {{task.status}}</span>
             </li>
             {% endfor %}
         </ol> 
