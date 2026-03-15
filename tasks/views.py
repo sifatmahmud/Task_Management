@@ -1,14 +1,43 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
-from tasks.forms import TaskForm, TaskModelForm
+from tasks.forms import TaskForm, TaskModelForm, TaskDetailModelForm
 from tasks.models import Employee, Task, TaskDetail, Project
 from datetime import date, timedelta
 from django.utils import timezone
 from django.db.models import Q, Count, Max, Min, Avg
+from django.contrib import messages
 
 
 def manager_dashboard(request):
-    return render(request, "dashboard/manager_dashboard.html")
+
+    type = request.GET.get('type', 'all')
+
+    counts = Task.objects.aggregate(
+        total=Count('id'),
+        completed = Count('id', filter=Q(status='COMPLETED')),
+        in_progress = Count('id', filter=Q(status='IN_PROGRESS')),
+        pending = Count('id', filter=Q(status='PENDING')),
+
+        )
+    
+    base_query = Task.objects.select_related('details').prefetch_related('assigned_to')
+
+    # retriving task data
+    if type == 'completed':
+        tasks = base_query.filter(status='COMPLETED')
+    elif type == 'in_progress':
+        tasks = base_query.filter(status='IN_PROGRESS')
+    elif type == 'pending':
+        tasks = base_query.filter(status='PENDING')
+    elif type == 'all':
+        tasks = base_query.all()
+
+    context = {
+        "tasks":tasks,
+        "counts":counts
+    }
+
+    return render(request, "dashboard/manager_dashboard.html", context)
 
 def user_dashboard(request):
     return render(request, "dashboard/user_dashboard.html")
@@ -26,64 +55,62 @@ def test(request):
     return render(request, 'test.html', context)
 
 def create_task(request):
-    form = TaskModelForm() # for GET
+    task_form = TaskModelForm() # for GET
+    task_detail_form = TaskDetailModelForm()
 
     if request.method == "POST":
-        form = TaskModelForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return render(request, 'task_form.html', {"form":form, 'message':"Task added successfully"})
+        task_form = TaskModelForm(request.POST) # POST
+        task_detail_form = TaskDetailModelForm(request.POST)
+        if task_form.is_valid() and task_detail_form.is_valid():
+            task = task_form.save()
+            task_detail = task_detail_form.save(commit=False)
+            task_detail.task = task
+            task_detail.save()
 
-    context = {"form": form}
+            messages.success(request, " Task created successfully !")
+
+            return redirect('create_task')
+
+    context = {"task_form": task_form, "task_detail_form":task_detail_form}
+    return render(request, "task_form.html", context)
+
+def update_task(request, id):
+    task = Task.objects.get(id=id)
+    task_form = TaskModelForm(instance=task) # for GET
+
+    if task.details:
+        task_detail_form = TaskDetailModelForm(instance=task.details)
+
+    if request.method == "POST":
+        task_form = TaskModelForm(request.POST, instance=task) # POST
+        task_detail_form = TaskDetailModelForm(request.POST, instance=task.details)
+        if task_form.is_valid() and task_detail_form.is_valid():
+
+            """ For Model Form Data """
+            task = task_form.save()
+            task_detail = task_detail_form.save(commit=False)
+            task_detail.task = task
+            task_detail.save()
+
+            messages.success(request, " Task updated successfully !")
+
+            return redirect('update_task', id)
+
+    context = {"task_form": task_form, "task_detail_form":task_detail_form}
     return render(request, "task_form.html", context)
 
 
-
+def delete_task(request, id):
+    if request.method == "POST":
+        task = Task.objects.get(id=id)
+        task.delete()
+        messages.success(request, "Task Deleted Successfully !")
+        return redirect('manager_dashboard')
+    else:
+        messages.error(request, "Something went wrong !!")
+        return redirect('manager_dashboard')
 
 
 def show_task(request):
-    # Show the tasks which are assigned to a specific employee
-    # employee = Employee.objects.get(id=1)
-    # tasks = employee.tasks.all()
-    # return render(request, 'show_task.html', {'tasks': tasks})
-
-    # Show all employees working on a specific project
-    # project = Project.objects.get(id=3)
-    # employees = Employee.objects.filter(tasks__project=project).distinct()
-    # return render(request, 'show_task.html', {'employees': employees})
-
-    # Get all tasks that are due today
-    # tasks = Task.objects.filter(due_date=date.today())
-    # return render(request, 'show_task.html', {'tasks': tasks})
-
-
-    # Show all tasks with a priority higher than 'low'
-    # tasks = TaskDetail.objects.exclude(priority='L')
-    # return render(request, 'show_task.html', {'tasks': tasks})
-
-
-    # employee = Employee.objects.get(id=2)
-    # tasks_count = employee.tasks.all().count()
-    # return render(request, 'show_task.html', {'tasks_count': tasks_count})
-
-
-    # recent_task = Task.objects.order_by('created_at').first()
-    # return render(request, 'show_task.html', {'recent_task': recent_task})
-
-
-
-    # projects = Project.objects.annotate(task_count = Count('task')).filter(task_count = 2)
-    # return render(request, 'show_task.html', {'projects': projects})
-
-    # now = timezone.now()
-    # one_week_ago = now - timedelta(days=7)
-    # overdue_tasks = Task.objects.filter(is_completed=False, due_date__lt=one_week_ago)
-    # return render(request, 'show_task.html', {'tasks': overdue_tasks})
-
-
-    # employees_with_task_count = Employee.objects.annotate(total_tasks=Count('tasks'))
-    # return render(request, 'show_task.html', {'emps': employees_with_task_count})
-
-
     tasks = Task.objects.exclude(status='PENDING')
     return render(request, 'show_task.html', {'tasks': tasks})
