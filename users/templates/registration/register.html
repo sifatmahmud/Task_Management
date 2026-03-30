@@ -10,7 +10,7 @@
 <body>
     <h1 class="text-3xl">Welcome to django authentication system</h1>
 
-    <div>
+    <div class='w-1/2 px-2'>
         {% if form.non_field_errors %}
             {% for error in form.non_field_errors %}
                 {{error}}
@@ -32,7 +32,7 @@
                     {% endif %}
                 </p>
             {% endfor %}
-            <button type="submit">Sign Up</button>
+            <button class='px-2 py-1 bg-blue-500 rounded mt-2' type="submit">Sign Up</button>
         </form>
     </div>
 </body>
