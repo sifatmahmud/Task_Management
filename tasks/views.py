@@ -6,10 +6,18 @@ from datetime import date, timedelta
 from django.utils import timezone
 from django.db.models import Q, Count, Max, Min, Avg
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test, permission_required
 
 
+def is_manager(user):
+    return user.groups.filter(name='Manager').exists()
+
+def is_employee(user):
+    return user.groups.filter(name='Employee').exists()
+
+
+@user_passes_test(is_manager, login_url='no-permission')
 def manager_dashboard(request):
-
     type = request.GET.get('type', 'all')
 
     counts = Task.objects.aggregate(
@@ -39,21 +47,13 @@ def manager_dashboard(request):
 
     return render(request, "dashboard/manager_dashboard.html", context)
 
-def user_dashboard(request):
+@user_passes_test(is_employee)
+def employee_dashboard(request):
     return render(request, "dashboard/user_dashboard.html")
 
-def test(request):
-    names = ["Mahmud", "Sifat", "Rifat", "Jon"]
-    count = 0
-    for name in names:
-        count+=1
-    context = {
-        "names": names,
-        "age": 23,
-        "count": count
-    }
-    return render(request, 'test.html', context)
 
+@login_required
+@permission_required('tasks.add_task', login_url='no-permission')
 def create_task(request):
     task_form = TaskModelForm() # for GET
     task_detail_form = TaskDetailModelForm()
@@ -74,6 +74,10 @@ def create_task(request):
     context = {"task_form": task_form, "task_detail_form":task_detail_form}
     return render(request, "task_form.html", context)
 
+
+
+@login_required
+@permission_required('tasks.change_task', login_url='no-permission')
 def update_task(request, id):
     task = Task.objects.get(id=id)
     task_form = TaskModelForm(instance=task) # for GET
@@ -100,6 +104,9 @@ def update_task(request, id):
     return render(request, "task_form.html", context)
 
 
+
+@login_required
+@permission_required('tasks.delete_task', login_url='no-permission')
 def delete_task(request, id):
     if request.method == "POST":
         task = Task.objects.get(id=id)
@@ -111,6 +118,8 @@ def delete_task(request, id):
         return redirect('manager_dashboard')
 
 
+@login_required
+@permission_required('tasks.view_task', login_url='no-permission')
 def show_task(request):
     tasks = Task.objects.exclude(status='PENDING')
     return render(request, 'show_task.html', {'tasks': tasks})
